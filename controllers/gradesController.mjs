@@ -71,17 +71,14 @@ async function createGrade(req, res) {
     }
 }
 
-
-
-
 // Aggregation pipeline that gets number of students with an average higher than 70%, total number of learners
 // and the percentage of learner with an average higher than 70%
 async function getClassStatus(req, res) {
     try {
-
-        console.log('GET /grades/states endpoint hit');
         
         let collection = await db.collection('grades');
+
+        const totalLearners = await collection.countDocuments();
 
         let result = await collection.aggregate([
           {
@@ -99,8 +96,7 @@ async function getClassStatus(req, res) {
             }
           }, {
             '$match': {
-              'weightedAverage': { '$gt': 0.7
-              }
+              'weightedAverage': { '$gt': 0.7 }
             }
           }, {
             '$count': 'learners'
@@ -111,7 +107,19 @@ async function getClassStatus(req, res) {
         if (result.length > 0) {
           count = result[0].learners;
         }
-        res.json({learners: count});
+
+        let ratio = 0;
+        if (totalLearners > 0) {
+          ratio = count / totalLearners;
+        } else {
+          ratio = 0;
+        }
+
+        res.json({
+          learners: count,
+          totalLearners: totalLearners,
+          ratio: ratio
+        });
     } catch (err) {
         console.error("Error in getClassStatus:", err)
         res.status(500).json({msg: 'Server Error'})
