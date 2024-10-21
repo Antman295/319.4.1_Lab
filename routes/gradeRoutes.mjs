@@ -4,6 +4,9 @@ import gradesCTL from '../controllers/gradesController.mjs'
 
 const router = express.Router()
 
+// Get stats of class
+router.get('/stats', gradesCTL.getClassStatus);
+
 // Get grades by ID here
 router.get('/:id', gradesCTL.getSingleGrade);
 
@@ -15,9 +18,6 @@ router.get('/class/:id', gradesCTL.getClassGrades)
 
 // Add new grade to DB
 router.post('/', gradesCTL.createGrade)
-
-// Get stats of class
-router.get('/stats', gradesCTL.getClassStatus);
 
 // Get weighted average for learner across all classes
 router.get('/student/:id/avg', gradesCTL.studentClassesAverage)
