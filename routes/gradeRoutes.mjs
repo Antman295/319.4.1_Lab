@@ -7,6 +7,9 @@ const router = express.Router()
 // Get stats of class
 router.get('/stats', gradesCTL.getClassStatus);
 
+// Get stat of learner within a class
+router.get('/stats/:id', gradesCTL.getSpecificClassStatus);
+
 // Get grades by ID here
 router.get('/:id', gradesCTL.getSingleGrade);
 

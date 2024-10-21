@@ -126,6 +126,67 @@ async function getClassStatus(req, res) {
     }
 }
 
+// Get weighted average but only for learners within a class with a specified class id
+async function getSpecificClassStatus(req, res) {
+  try {
+      const classID = req.params.id;
+
+      let collection = await db.collection('grades');
+
+      const totalLearners = await collection.countDocuments({ class_id: classID });
+
+      let result = await collection.aggregate([
+        {
+          '$match' : {
+            'class_id': classID
+          }
+        },
+        
+        {
+          '$project': {
+            '_id': 0, 
+            'learner_id': 1, 
+            'class_id': 1, 
+            'weightedAverage': {
+              '$sum': [
+                { '$multiply': [ {  '$avg': '$exam' }, 0.5 ] }, 
+                { '$multiply': [ {  '$avg': '$quiz' }, 0.3  ] }, 
+                { '$multiply': [ {  '$avg': '$homework' }, 0.2 ] }
+              ]
+            }
+          }
+        }, {
+          '$match': {
+            'weightedAverage': { '$gt': 0.7 }
+          }
+        }, {
+          '$count': 'learners'
+        }
+      ]).toArray();
+
+      let count = 0;
+      if (result.length > 0) {
+        count = result[0].learners;
+      }
+
+      let ratio = 0;
+      if (totalLearners > 0) {
+        ratio = count / totalLearners;
+      } else {
+        ratio = 0;
+      }
+
+      res.json({
+        learners: count,
+        totalLearners: totalLearners,
+        ratio: ratio
+      });
+  } catch (err) {
+      console.error("Error in getClassStatus:", err)
+      res.status(500).json({msg: 'Server Error'})
+  }
+}
+
 // All class averages for one learner
 async function studentClassesAverage(req, res){
   let collection = await db.collection('grades');
@@ -187,4 +248,4 @@ async function studentClassesAverage(req, res){
     res.json(results)
 }
 
-export default { getSingleGrade, getClassGrades, getStudentGrades, createGrade, getClassStatus, studentClassesAverage };
+export default { getSingleGrade, getClassGrades, getStudentGrades, createGrade, getClassStatus, getSpecificClassStatus, studentClassesAverage };
